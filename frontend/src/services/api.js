@@ -1,18 +1,24 @@
-const BASE_URL = '/api'
+const BASE_URL = (import.meta.env.VITE_API_URL || '') + '/api'
 
 async function handleResponse(res) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail || 'Error desconocido')
+    const detail = err.detail
+    const message = Array.isArray(detail)
+      ? detail.map(d => d.msg || JSON.stringify(d)).join(', ')
+      : typeof detail === 'string'
+        ? detail
+        : JSON.stringify(detail)
+    throw new Error(message || 'Error desconocido')
   }
   return res.json()
 }
 
-export async function synthesize(text) {
+export async function synthesize(text, images = []) {
   const res = await fetch(`${BASE_URL}/synthesize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, images }),
   })
   return handleResponse(res)
 }

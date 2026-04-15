@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { extractTextFromFile } from '../services/api'
 
-export default function TextInput({ onSubmit, loading }) {
+export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
   const [text, setText] = useState('')
   const [extracting, setExtracting] = useState(false)
   const [fileError, setFileError] = useState('')
@@ -21,11 +21,18 @@ export default function TextInput({ onSubmit, loading }) {
     try {
       const data = await extractTextFromFile(file)
       setText(data.text)
+      if (data.images?.length > 0) {
+        onImagesExtracted?.(data.images)
+      }
       const ext = file.name.split('.').pop().toUpperCase()
+      const imgCount = data.images?.length ?? 0
+      const imgLabel = imgCount > 0
+        ? ` · ${imgCount} imagen${imgCount !== 1 ? 'es' : ''} radiológica${imgCount !== 1 ? 's' : ''} detectada${imgCount !== 1 ? 's' : ''}`
+        : ''
       if (data.pages) {
-        setFileError(`✅ ${ext} cargado — ${data.pages} página${data.pages !== 1 ? 's' : ''}`)
+        setFileError(`✅ ${ext} cargado — ${data.pages} página${data.pages !== 1 ? 's' : ''}${imgLabel}`)
       } else {
-        setFileError(`✅ Archivo cargado`)
+        setFileError(`✅ Archivo cargado${imgLabel}`)
       }
     } catch (err) {
       setFileError('⚠️ ' + err.message)
@@ -37,7 +44,7 @@ export default function TextInput({ onSubmit, loading }) {
   }
 
   const charCount = text.length
-  const maxChars = 50000
+  const maxChars = 200000
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
@@ -47,7 +54,7 @@ export default function TextInput({ onSubmit, loading }) {
           placeholder="Pega aquí tu texto académico de radiología (inglés o español)..."
           value={text}
           onChange={(e) => setText(e.target.value)}
-          maxLength={maxChars}
+          maxLength={200000}
           disabled={loading || extracting}
         />
         <span className={`absolute bottom-3 right-3 text-xs ${charCount > maxChars * 0.9 ? 'text-red-400' : 'text-slate-400'}`}>

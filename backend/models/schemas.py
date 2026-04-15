@@ -3,7 +3,8 @@ from typing import List, Optional
 
 
 class SynthesizeRequest(BaseModel):
-    text: str = Field(..., min_length=10, max_length=50000)
+    text: str = Field(..., min_length=10, max_length=200000)
+    images: List[str] = Field(default=[])  # base64 PNG strings, one per page/figura
 
 
 class SynthesizeResponse(BaseModel):

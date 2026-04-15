@@ -34,11 +34,26 @@
 .synthesis-content h3 {
   @apply font-bold mt-4 mb-2;
 }
-.synthesis-content h1 { @apply text-xl; }
-.synthesis-content h2 { @apply text-lg; }
-.synthesis-content h3 { @apply text-base; }
+.synthesis-content h1 { font-size: 1.1rem; }
+.synthesis-content h2 { font-size: 0.95rem; }
+.synthesis-content h3 { font-size: 0.8rem; }
 .synthesis-content ul { @apply list-disc pl-5 my-2; }
 .synthesis-content ol { @apply list-decimal pl-5 my-2; }
 .synthesis-content li { @apply mb-1; }
 .synthesis-content p { @apply mb-2 leading-relaxed; }
 .synthesis-content strong { @apply font-semibold; }
+
+/* Inline figures from document */
+.synthesis-figure {
+  @apply my-3 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50;
+  max-width: 55%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.synthesis-img {
+  @apply w-full h-auto block;
+}
+.synthesis-figcaption {
+  font-size: 0.6rem;
+  @apply text-slate-500 text-center px-3 py-1 border-t border-slate-200;
+}

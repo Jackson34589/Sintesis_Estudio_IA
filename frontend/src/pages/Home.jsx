@@ -16,13 +16,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [docImages, setDocImages] = useState([])
 
   const handleSubmit = async (text) => {
     setLoading(true)
     setError('')
     setResult(null)
     try {
-      const data = await synthesize(text)
+      const imageBase64s = docImages.map(img => img.data)
+      const data = await synthesize(text, imageBase64s)
       setResult({ ...data, textHash: hashText(text) })
     } catch (e) {
       setError(e.message)
@@ -44,7 +46,7 @@ export default function Home() {
       {/* Input */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <h2 className="text-sm font-semibold text-slate-600 mb-3">📝 Texto a sintetizar</h2>
-        <TextInput onSubmit={handleSubmit} loading={loading} />
+        <TextInput onSubmit={handleSubmit} loading={loading} onImagesExtracted={setDocImages} />
       </div>
 
       {/* Error */}
@@ -77,6 +79,7 @@ export default function Home() {
             detectedLanguage={result.detected_language}
             cached={result.cached}
             textHash={result.textHash}
+            docImages={docImages}
           />
         </div>
       )}

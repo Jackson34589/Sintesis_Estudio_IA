@@ -15,9 +15,19 @@ app = FastAPI(
     version="1.0.0",
 )
 
+import os
+
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+# En producción añadir la URL de Vercel desde variable de entorno
+if os.getenv("FRONTEND_URL"):
+    ALLOWED_ORIGINS.append(os.getenv("FRONTEND_URL"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

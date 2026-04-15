@@ -15,25 +15,21 @@ async def synthesize(payload: SynthesizeRequest):
 
     lang_code, lang_name = detect_language(text)
 
-    cached = cache_service.get(text)
-    if cached:
-        return SynthesizeResponse(
-            synthesis=cached,
-            detected_language=lang_name,
-            cached=True,
-        )
+    # Solo usar caché cuando no hay imágenes (con imágenes cada síntesis es única)
+    if not payload.images:
+        cached = cache_service.get(text)
+        if cached:
+            return SynthesizeResponse(synthesis=cached, detected_language=lang_name, cached=True)
 
     try:
-        synthesis = synthesize_text(text)
+        synthesis = synthesize_text(text, payload.images)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Error al llamar a la IA: {str(e)}")
 
-    cache_service.set(text, synthesis)
-    return SynthesizeResponse(
-        synthesis=synthesis,
-        detected_language=lang_name,
-        cached=False,
-    )
+    if not payload.images:
+        cache_service.set(text, synthesis)
+
+    return SynthesizeResponse(synthesis=synthesis, detected_language=lang_name, cached=False)
 
 
 @router.post("/detect-lang", response_model=DetectLanguageResponse)

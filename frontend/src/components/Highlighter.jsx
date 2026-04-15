@@ -10,7 +10,7 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-export default function Highlighter({ synthesis, highlights, onHighlightsChange }) {
+export default function Highlighter({ synthesis, highlights, onHighlightsChange, docImages = [] }) {
   const [activeColor, setActiveColor] = useState('yellow')
   const containerRef = useRef(null)
 
@@ -33,12 +33,11 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange 
     onHighlightsChange(highlights.filter((h) => h.id !== id))
   }
 
-  // Build HTML with highlights applied
   const buildHtml = () => {
     if (!synthesis) return ''
     let html = synthesis
 
-    // Apply highlights in reverse order to avoid offset conflicts
+    // 1. Apply highlights first (over raw text, before image substitution)
     const sorted = [...highlights].reverse()
     for (const hl of sorted) {
       const escaped = escapeRegex(hl.text)
@@ -49,7 +48,7 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange 
       )
     }
 
-    // Basic markdown-like formatting
+    // 2. Markdown formatting
     html = html
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -59,6 +58,27 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange 
       .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
       .replace(/\n{2,}/g, '</p><p>')
       .replace(/^(?!<[hul])(.+)$/gm, '<p>$1</p>')
+
+    // 3. Replace [IMG:N] markers with inline images — each index shown only once
+    if (docImages.length > 0) {
+      const rendered = new Set()
+      html = html.replace(/\[IMG:(\d+)\]/g, (_, n) => {
+        const idx = parseInt(n) - 1
+        if (rendered.has(idx)) return ''   // skip duplicates
+        rendered.add(idx)
+        const img = docImages[idx]
+        if (!img) return ''
+        return `
+          <figure class="synthesis-figure">
+            <img
+              src="data:image/png;base64,${img.data}"
+              alt="${img.label}"
+              class="synthesis-img"
+            />
+            <figcaption class="synthesis-figcaption">${img.label}</figcaption>
+          </figure>`
+      })
+    }
 
     return html
   }
@@ -79,9 +99,9 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange 
 
   return (
     <div className="space-y-3">
-      {/* Color picker */}
-      <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-xs text-slate-500 font-medium">Resaltar con:</span>
+      {/* Color picker — sticky mientras se lee la síntesis */}
+      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex gap-2 flex-wrap items-center">
+        <span className="text-xs text-slate-500 font-medium">Resaltar:</span>
         {COLORS.map((c) => (
           <button
             key={c.id}
@@ -105,11 +125,12 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange 
         )}
       </div>
 
-      {/* Synthesis with highlights */}
+      {/* Synthesis with inline images and highlights */}
       <div
         ref={containerRef}
         id="synthesis-content"
-        className="synthesis-content bg-white border border-slate-200 rounded-xl p-5 text-sm leading-relaxed min-h-[300px] cursor-text select-text shadow-sm"
+        className="synthesis-content bg-white border border-slate-200 rounded-xl p-5 leading-relaxed min-h-[300px] cursor-text select-text shadow-sm"
+        style={{ fontSize: '0.656rem' }}
         onMouseUp={addHighlight}
         onTouchEnd={addHighlight}
         dangerouslySetInnerHTML={{ __html: buildHtml() }}

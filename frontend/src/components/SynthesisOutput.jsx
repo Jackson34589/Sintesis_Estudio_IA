@@ -3,8 +3,9 @@ import Highlighter from './Highlighter'
 import ReviewMode from './ReviewMode'
 import QuizPanel from './QuizPanel'
 import ExportButton from './ExportButton'
+import ImageGallery from './ImageGallery'
 
-export default function SynthesisOutput({ synthesis, detectedLanguage, cached, textHash }) {
+export default function SynthesisOutput({ synthesis, detectedLanguage, cached, textHash, docImages = [] }) {
   const [highlights, setHighlights] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('highlights') || '{}')
@@ -48,6 +49,7 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
             { id: 'synthesis', label: '📄 Síntesis' },
             { id: 'review',    label: '👁️ Repaso' },
             { id: 'quiz',      label: '❓ Quiz' },
+            ...(docImages.length > 0 ? [{ id: 'images', label: `🖼️ Imágenes (${docImages.length})` }] : []),
           ].map((tab) => (
             <button
               key={tab.id}
@@ -71,8 +73,9 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
             synthesis={synthesis}
             highlights={highlights}
             onHighlightsChange={updateHighlights}
+            docImages={docImages}
           />
-          <ExportButton synthesis={synthesis} highlights={highlights} />
+          <ExportButton synthesis={synthesis} highlights={highlights} docImages={docImages} />
         </>
       )}
       {view === 'review' && (
@@ -80,6 +83,20 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
       )}
       {view === 'quiz' && (
         <QuizPanel highlights={highlights} onClose={() => setView('synthesis')} />
+      )}
+      {view === 'images' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-700">🖼️ Imágenes del documento</h2>
+            <button
+              onClick={() => setView('synthesis')}
+              className="text-sm text-slate-500 hover:text-slate-700 border border-slate-300 px-3 py-1 rounded-lg transition-colors"
+            >
+              Volver
+            </button>
+          </div>
+          <ImageGallery images={docImages} />
+        </div>
       )}
     </div>
   )
