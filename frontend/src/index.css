@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-800 font-sans;
+  }
+}
+
+/* Highlight colors */
+.highlight-yellow {
+  background-color: #fef08a;
+  border-radius: 2px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.highlight-red {
+  background-color: #fca5a5;
+  border-radius: 2px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.highlight-blue {
+  background-color: #93c5fd;
+  border-radius: 2px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+/* Synthesis prose */
+.synthesis-content h1,
+.synthesis-content h2,
+.synthesis-content h3 {
+  @apply font-bold mt-4 mb-2;
+}
+.synthesis-content h1 { @apply text-xl; }
+.synthesis-content h2 { @apply text-lg; }
+.synthesis-content h3 { @apply text-base; }
+.synthesis-content ul { @apply list-disc pl-5 my-2; }
+.synthesis-content ol { @apply list-decimal pl-5 my-2; }
+.synthesis-content li { @apply mb-1; }
+.synthesis-content p { @apply mb-2 leading-relaxed; }
+.synthesis-content strong { @apply font-semibold; }
