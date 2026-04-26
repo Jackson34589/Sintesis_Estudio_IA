@@ -21,11 +21,9 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
       const usableW = pageW - margin * 2
       const usablePageH = pageH - margin * 2
 
-      // --- 1. Capture synthesis text ---
       const element = document.getElementById('synthesis-content')
       if (!element) throw new Error('No se encontró el contenido')
 
-      // Medir figuras con DOM (bloques atómicos — nunca partir)
       const containerTop = element.getBoundingClientRect().top
       const figureRelBounds = Array.from(element.querySelectorAll('figure.synthesis-figure'))
         .map(fig => {
@@ -43,7 +41,6 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
         top: b.top * canvasScale, bottom: b.bottom * canvasScale,
       }))
 
-      // Paso 1: retroceder el corte para no partir ninguna figura
       function avoidFigures(srcY, desiredEnd) {
         let sliceEnd = desiredEnd
         let changed = true
@@ -60,8 +57,6 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
         return sliceEnd > srcY ? sliceEnd : desiredEnd
       }
 
-      // Paso 2: ajustar el corte a la fila blanca más cercana (espacio entre líneas de texto)
-      // Lee el canvas directamente — no depende de medidas del DOM
       const canvasCtx = canvas.getContext('2d')
       function snapToWhiteRow(srcY, sliceEnd, searchPx = 60) {
         const searchFrom = Math.max(srcY + 1, Math.floor(sliceEnd) - searchPx)
@@ -71,7 +66,6 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
         const { data } = canvasCtx.getImageData(0, searchFrom, canvas.width, regionH)
         const W = canvas.width
 
-        // Buscar hacia atrás desde sliceEnd la fila más blanca
         for (let dy = 0; dy <= regionH; dy++) {
           const rowY = Math.floor(sliceEnd) - dy
           if (rowY <= srcY) break
@@ -81,9 +75,9 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
             const i = rowOffset + x * 4
             if (data[i] >= 248 && data[i + 1] >= 248 && data[i + 2] >= 248) white++
           }
-          if (white / W >= 0.97) return rowY  // fila ≥ 97 % blanca → corte seguro
+          if (white / W >= 0.97) return rowY
         }
-        return sliceEnd  // no se encontró fila blanca, usar punto original
+        return sliceEnd
       }
 
       let srcY = 0
@@ -99,9 +93,7 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
         if (desiredEnd >= canvas.height) {
           sliceEnd = canvas.height
         } else {
-          // 1. No partir figuras (DOM measurement)
           const afterFigures = avoidFigures(srcY, desiredEnd)
-          // 2. Ajustar al espacio blanco entre líneas más cercano (canvas scanning)
           sliceEnd = snapToWhiteRow(srcY, afterFigures)
         }
 
@@ -117,9 +109,7 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
         srcY = sliceEnd
       }
 
-      // --- 2. Append document images ---
       if (docImages.length > 0) {
-        // Section header page
         pdf.addPage()
         pdf.setFontSize(14)
         pdf.setFont('helvetica', 'bold')
@@ -137,7 +127,7 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
           await new Promise((resolve) => { imgEl.onload = resolve })
 
           const maxImgW = pageW - margin * 2
-          const maxImgH = pageH - margin * 2 - 20 // leave room for label
+          const maxImgH = pageH - margin * 2 - 20
           const ratio = imgEl.naturalWidth / imgEl.naturalHeight
           let drawW = maxImgW
           let drawH = drawW / ratio
@@ -146,19 +136,16 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
             drawW = drawH * ratio
           }
 
-          // If image doesn't fit on current page, add new page
           if (yPos + drawH + 10 > pageH - margin) {
             pdf.addPage()
             yPos = margin
           }
 
-          // Label
           pdf.setFontSize(9)
           pdf.setFont('helvetica', 'bold')
           pdf.text(img.label, margin, yPos)
           yPos += 5
 
-          // Image
           const xPos = margin + (maxImgW - drawW) / 2
           pdf.addImage(`data:image/png;base64,${img.data}`, 'PNG', xPos, yPos, drawW, drawH)
           yPos += drawH + 10
@@ -185,45 +172,36 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
     }
   }
 
+  const spinner = (
+    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+    </svg>
+  )
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={handleExportPDF}
           disabled={loadingPdf}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-300 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 disabled:bg-surface disabled:text-ink-muted text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
         >
-          {loadingPdf ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Exportando PDF...
-            </>
-          ) : '📄 Exportar PDF'}
+          {loadingPdf ? <>{spinner} Exportando PDF...</> : '📄 Exportar PDF'}
         </button>
 
         <button
           onClick={handleExportPPTX}
           disabled={loadingPptx}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-secondary-600 hover:bg-secondary-700 disabled:bg-surface disabled:text-ink-muted text-white rounded-xl text-sm font-medium transition-colors shadow-sm"
         >
-          {loadingPptx ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Exportando PPTX...
-            </>
-          ) : '📊 Exportar PPTX'}
+          {loadingPptx ? <>{spinner} Exportando PPTX...</> : '📊 Exportar PPTX'}
         </button>
       </div>
 
-      {error && <p className="text-red-500 text-xs">{error}</p>}
+      {error && <p className="text-danger text-xs">{error}</p>}
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-ink-muted">
         {[
           highlights.length > 0 && `${highlights.length} resaltado${highlights.length !== 1 ? 's' : ''}`,
           docImages.length > 0 && `${docImages.length} imagen${docImages.length !== 1 ? 'es' : ''}`,

@@ -14,7 +14,7 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
       return []
     }
   })
-  const [view, setView] = useState('synthesis') // 'synthesis' | 'review' | 'quiz'
+  const [view, setView] = useState('synthesis')
 
   const updateHighlights = (newHighlights) => {
     setHighlights(newHighlights)
@@ -30,15 +30,15 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
       {/* Meta bar */}
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex gap-2 flex-wrap">
-          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+          <span className="text-xs bg-brand-50 text-brand-700 px-2 py-1 rounded-full">
             🌐 Detectado: {detectedLanguage}
           </span>
           {cached && (
-            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+            <span className="text-xs bg-success-50 text-success px-2 py-1 rounded-full">
               ⚡ Desde caché
             </span>
           )}
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+          <span className="text-xs bg-secondary-50 text-secondary-600 px-2 py-1 rounded-full">
             ✏️ {highlights.length} resaltado{highlights.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -57,7 +57,7 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
               className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                 view === tab.id
                   ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-surface text-ink-muted hover:bg-brand-50 hover:text-brand-700'
               }`}
             >
               {tab.label}
@@ -87,10 +87,10 @@ export default function SynthesisOutput({ synthesis, detectedLanguage, cached, t
       {view === 'images' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-700">🖼️ Imágenes del documento</h2>
+            <h2 className="text-base font-bold text-ink">🖼️ Imágenes del documento</h2>
             <button
               onClick={() => setView('synthesis')}
-              className="text-sm text-slate-500 hover:text-slate-700 border border-slate-300 px-3 py-1 rounded-lg transition-colors"
+              className="text-sm text-ink-muted hover:text-ink border border-brand-100 hover:bg-brand-50 px-3 py-1 rounded-lg transition-colors"
             >
               Volver
             </button>

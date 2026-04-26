@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 font-sans;
+    @apply bg-surface text-ink font-sans;
   }
 }
 
@@ -32,28 +32,31 @@
 .synthesis-content h1,
 .synthesis-content h2,
 .synthesis-content h3 {
-  @apply font-bold mt-4 mb-2;
+  @apply font-bold mt-5 mb-2;
+  color: #2A9D8F;
 }
-.synthesis-content h1 { font-size: 1.1rem; }
-.synthesis-content h2 { font-size: 0.95rem; }
-.synthesis-content h3 { font-size: 0.8rem; }
-.synthesis-content ul { @apply list-disc pl-5 my-2; }
-.synthesis-content ol { @apply list-decimal pl-5 my-2; }
-.synthesis-content li { @apply mb-1; }
-.synthesis-content p { @apply mb-2 leading-relaxed; }
+.synthesis-content h1 { font-size: 1.05rem; }
+.synthesis-content h2 { font-size: 0.925rem; }
+.synthesis-content h3 { font-size: 0.825rem; color: #218276; }
+.synthesis-content ul  { @apply list-disc pl-5 my-2; }
+.synthesis-content ol  { @apply list-decimal pl-5 my-2; }
+.synthesis-content li  { @apply mb-1; }
+.synthesis-content p   { @apply mb-3 leading-relaxed; }
 .synthesis-content strong { @apply font-semibold; }
 
-/* Inline figures from document */
+/* Inline figures */
 .synthesis-figure {
-  @apply my-3 rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50;
+  @apply my-4 rounded-xl overflow-hidden shadow-sm;
+  border: 1px solid #b3e8e3;
+  background-color: #F5F7FA;
   max-width: 55%;
   margin-left: auto;
   margin-right: auto;
 }
-.synthesis-img {
-  @apply w-full h-auto block;
-}
+.synthesis-img { @apply w-full h-auto block; }
 .synthesis-figcaption {
   font-size: 0.6rem;
-  @apply text-slate-500 text-center px-3 py-1 border-t border-slate-200;
+  color: #6C757D;
+  @apply text-center px-3 py-1;
+  border-top: 1px solid #b3e8e3;
 }

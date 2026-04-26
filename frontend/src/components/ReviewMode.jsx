@@ -1,7 +1,7 @@
 const COLOR_META = {
-  yellow: { label: 'Importante',    emoji: '🟡', bg: 'bg-yellow-50',  border: 'border-yellow-300', text: 'text-yellow-800' },
+  yellow: { label: 'Importante',          emoji: '🟡', bg: 'bg-yellow-50',  border: 'border-yellow-300', text: 'text-yellow-800' },
   red:    { label: 'Crítico para examen', emoji: '🔴', bg: 'bg-red-50',    border: 'border-red-300',    text: 'text-red-800'    },
-  blue:   { label: 'Definición / concepto', emoji: '🔵', bg: 'bg-blue-50',   border: 'border-blue-300',   text: 'text-blue-800'   },
+  blue:   { label: 'Definición / concepto', emoji: '🔵', bg: 'bg-blue-50', border: 'border-blue-300',   text: 'text-blue-800'   },
 }
 
 export default function ReviewMode({ highlights, onClose }) {
@@ -15,17 +15,17 @@ export default function ReviewMode({ highlights, onClose }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-slate-700">👁️ Modo Repaso</h2>
+        <h2 className="text-base font-bold text-ink">👁️ Modo Repaso</h2>
         <button
           onClick={onClose}
-          className="text-sm text-slate-500 hover:text-slate-700 border border-slate-300 px-3 py-1 rounded-lg transition-colors"
+          className="text-sm text-ink-muted hover:text-ink border border-brand-100 hover:bg-brand-50 px-3 py-1 rounded-lg transition-colors"
         >
           Volver a la síntesis
         </button>
       </div>
 
       {!hasAny ? (
-        <div className="text-center py-12 text-slate-400 text-sm">
+        <div className="text-center py-12 text-ink-muted text-sm">
           <p className="text-3xl mb-3">✏️</p>
           <p>Aún no has resaltado ningún fragmento.</p>
           <p>Vuelve a la síntesis y selecciona los textos importantes.</p>

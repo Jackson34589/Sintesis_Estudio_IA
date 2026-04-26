@@ -37,34 +37,34 @@ export default function Home() {
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="text-center space-y-1">
-        <h1 className="text-2xl font-bold text-slate-800">RadioSíntesis AI</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-ink">RadioSíntesis AI</h1>
+        <p className="text-sm text-ink-muted">
           Sintetiza textos académicos de radiología en español · Resalta · Repasa · Evalúate
         </p>
       </div>
 
       {/* Input */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <h2 className="text-sm font-semibold text-slate-600 mb-3">📝 Texto a sintetizar</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
+        <h2 className="text-sm font-semibold text-brand-600 mb-3">📝 Texto a sintetizar</h2>
         <TextInput onSubmit={handleSubmit} loading={loading} onImagesExtracted={setDocImages} />
       </div>
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+        <div className="bg-danger-50 border border-danger rounded-xl p-4 text-sm text-danger">
           ⚠️ {error}
         </div>
       )}
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 animate-pulse">
-          <div className="h-4 bg-slate-200 rounded w-3/4" />
-          <div className="h-4 bg-slate-200 rounded w-full" />
-          <div className="h-4 bg-slate-200 rounded w-5/6" />
-          <div className="h-4 bg-slate-200 rounded w-2/3" />
-          <div className="h-4 bg-slate-200 rounded w-full" />
-          <p className="text-xs text-slate-400 text-center pt-2">
+        <div className="bg-white rounded-2xl border border-brand-100 p-5 space-y-3 animate-pulse">
+          <div className="h-4 bg-brand-50 rounded w-3/4" />
+          <div className="h-4 bg-brand-50 rounded w-full" />
+          <div className="h-4 bg-brand-50 rounded w-5/6" />
+          <div className="h-4 bg-brand-50 rounded w-2/3" />
+          <div className="h-4 bg-brand-50 rounded w-full" />
+          <p className="text-xs text-ink-muted text-center pt-2">
             La IA está sintetizando tu texto... puede tardar unos segundos.
           </p>
         </div>
@@ -72,8 +72,8 @@ export default function Home() {
 
       {/* Result */}
       {result && !loading && (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-          <h2 className="text-sm font-semibold text-slate-600 mb-4">🧠 Síntesis generada</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
+          <h2 className="text-sm font-semibold text-brand-600 mb-4">🧠 Síntesis generada</h2>
           <SynthesisOutput
             synthesis={result.synthesis}
             detectedLanguage={result.detected_language}
@@ -85,7 +85,7 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs text-ink-muted">
         RadioSíntesis AI · Powered by Claude Haiku · Los resaltados se guardan en tu navegador
       </p>
     </div>

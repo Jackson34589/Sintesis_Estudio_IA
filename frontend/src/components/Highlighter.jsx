@@ -100,16 +100,16 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange,
   return (
     <div className="space-y-3">
       {/* Color picker — sticky mientras se lee la síntesis */}
-      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-xl px-3 py-2 shadow-sm flex gap-2 flex-wrap items-center">
-        <span className="text-xs text-slate-500 font-medium">Resaltar:</span>
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border border-brand-100 rounded-xl px-3 py-2 shadow-sm flex gap-2 flex-wrap items-center">
+        <span className="text-xs text-ink-muted font-medium">Resaltar:</span>
         {COLORS.map((c) => (
           <button
             key={c.id}
             onClick={() => setActiveColor(c.id)}
             className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all ${
               activeColor === c.id
-                ? 'border-slate-700 shadow-sm scale-105'
-                : 'border-transparent hover:border-slate-300'
+                ? 'border-brand-700 shadow-sm scale-105'
+                : 'border-transparent hover:border-brand-200'
             } ${c.bg}`}
           >
             {c.emoji} {c.label}
@@ -118,7 +118,7 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange,
         {highlights.length > 0 && (
           <button
             onClick={() => onHighlightsChange([])}
-            className="ml-auto text-xs text-red-400 hover:text-red-600 transition-colors"
+            className="ml-auto text-xs text-danger/70 hover:text-danger transition-colors"
           >
             Quitar todos
           </button>
@@ -129,14 +129,14 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange,
       <div
         ref={containerRef}
         id="synthesis-content"
-        className="synthesis-content bg-white border border-slate-200 rounded-xl p-5 leading-relaxed min-h-[300px] cursor-text select-text shadow-sm"
-        style={{ fontSize: '0.656rem' }}
+        className="synthesis-content bg-white border border-brand-100 rounded-xl p-5 leading-relaxed min-h-[300px] cursor-text select-text shadow-sm"
+        style={{ fontSize: '0.8rem' }}
         onMouseUp={addHighlight}
         onTouchEnd={addHighlight}
         dangerouslySetInnerHTML={{ __html: buildHtml() }}
       />
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-ink-muted">
         Selecciona texto para resaltarlo. Haz clic sobre un resaltado para quitarlo.
       </p>
     </div>
