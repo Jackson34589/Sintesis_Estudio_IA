@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 import { exportPptx } from '../services/api'
 
 export default function ExportButton({ synthesis, highlights, docImages = [] }) {
@@ -12,6 +10,10 @@ export default function ExportButton({ synthesis, highlights, docImages = [] }) 
     setLoadingPdf(true)
     setError('')
     try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ])
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageW = pdf.internal.pageSize.getWidth()
       const pageH = pdf.internal.pageSize.getHeight()
