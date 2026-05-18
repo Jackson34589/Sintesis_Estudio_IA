@@ -66,13 +66,18 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange,
     return () => document.removeEventListener('pointerdown', hide)
   }, [])
 
-  // Remove highlight on click/tap
+  // Remove highlight on tap — but NOT when the user just finished selecting text
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
     const onTap = (e) => {
       const mark = e.target.closest('mark[data-id]')
-      if (mark) { e.preventDefault(); removeHighlight(mark.getAttribute('data-id')) }
+      if (!mark) return
+      // If there's an active selection the user is highlighting, not tapping to remove
+      const sel = window.getSelection()
+      if (sel && sel.toString().trim().length > 0) return
+      e.preventDefault()
+      removeHighlight(mark.getAttribute('data-id'))
     }
     container.addEventListener('click', onTap)
     return () => container.removeEventListener('click', onTap)
@@ -84,8 +89,11 @@ export default function Highlighter({ synthesis, highlights, onHighlightsChange,
     if (!synthesis) return ''
     let html = synthesis
 
-    // Apply highlights
-    for (const hl of [...highlights].reverse()) {
+    // Apply highlights longest-first so shorter highlights that overlap with
+    // longer ones are applied AFTER — this prevents a shorter mark from splitting
+    // the raw text that a longer mark is still trying to find.
+    const sorted = [...highlights].sort((a, b) => b.text.length - a.text.length)
+    for (const hl of sorted) {
       const regex = new RegExp(`(${escapeRegex(hl.text)})`, 'g')
       html = html.replace(
         regex,
