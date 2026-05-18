@@ -95,45 +95,53 @@ def extract_embedded_images_from_pdf(doc: fitz.Document) -> list:
     return extracted
 
 
+MAX_PDF_PAGES = 30   # cap to avoid memory spikes on huge PDFs
+MAX_EMBEDDED_IMAGES = 8  # enough for a typical radiology document
+
+
 def extract_pdf(content: bytes) -> dict:
     doc = fitz.open(stream=content, filetype="pdf")
+    n_pages = min(len(doc), MAX_PDF_PAGES)
 
-    # Render all pages first (pure CPU, fast)
-    page_data: list[dict] = []
-    for page in doc:
-        pix_vision = render_page(page, dpi=120)   # 150→120: smaller payload, still readable
-        pix_gallery = render_page(page, dpi=72)    # 96→72: gallery display
-        page_data.append({
-            "num": page.number,
-            "vision_b64": pix_to_b64(pix_vision),
-            "gallery_b64": pix_to_b64(pix_gallery),
-        })
-
-    embedded_images = extract_embedded_images_from_pdf(doc)
-    doc.close()
-
-    # Extract text from all pages in parallel (was sequential before)
+    # Submit pages to the thread pool one at a time so we never hold
+    # all rendered bitmaps in memory simultaneously.
     page_texts: dict[int, str] = {}
-    max_workers = min(4, len(page_data)) if page_data else 1
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        future_to_num = {
-            pool.submit(extract_with_vision, pd["vision_b64"]): pd["num"]
-            for pd in page_data
-        }
-        for future in as_completed(future_to_num):
-            num = future_to_num[future]
+    page_gallery: dict[int, str] = {}
+
+    with ThreadPoolExecutor(max_workers=2) as pool:  # 2 workers = lower peak RAM
+        futures: dict = {}
+        for i in range(n_pages):
+            page = doc[i]
+
+            pix_v = render_page(page, dpi=100)   # 120→100: ~30 % smaller payload
+            vision_b64 = pix_to_b64(pix_v)
+            pix_v = None                          # release raw pixmap immediately
+
+            pix_g = render_page(page, dpi=60)    # 72→60: gallery only needs low-res
+            page_gallery[i] = pix_to_b64(pix_g)
+            pix_g = None
+
+            future = pool.submit(extract_with_vision, vision_b64)
+            futures[future] = i
+            vision_b64 = None                     # thread holds the only reference now
+
+        for future in as_completed(futures):
+            num = futures[future]
             try:
                 page_texts[num] = future.result()
             except Exception:
                 page_texts[num] = ""
 
-    pages_text = []
-    page_images = []
-    for pd in page_data:
-        num = pd["num"]
-        if page_texts.get(num):
-            pages_text.append(page_texts[num])
-        page_images.append({"data": pd["gallery_b64"], "label": f"Página {num + 1}"})
+    embedded_images = extract_embedded_images_from_pdf(doc)
+    # Cap embedded images to avoid sending huge payloads to Claude
+    embedded_images = embedded_images[:MAX_EMBEDDED_IMAGES]
+    doc.close()
+
+    pages_text = [page_texts[i] for i in range(n_pages) if page_texts.get(i)]
+    page_images = [
+        {"data": page_gallery[i], "label": f"Página {i + 1}"}
+        for i in range(n_pages)
+    ]
 
     if not pages_text:
         raise HTTPException(status_code=422, detail="No se pudo extraer contenido del PDF.")
