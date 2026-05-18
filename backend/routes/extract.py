@@ -95,64 +95,75 @@ def extract_embedded_images_from_pdf(doc: fitz.Document) -> list:
     return extracted
 
 
-MAX_PDF_PAGES = 30   # cap to avoid memory spikes on huge PDFs
-MAX_EMBEDDED_IMAGES = 8  # enough for a typical radiology document
+MAX_PDF_PAGES = 30
+MAX_EMBEDDED_IMAGES = 8
+# A page with fewer than this many characters is considered scanned/image-only
+NATIVE_TEXT_MIN_CHARS = 120
 
 
 def extract_pdf(content: bytes) -> dict:
     doc = fitz.open(stream=content, filetype="pdf")
     n_pages = min(len(doc), MAX_PDF_PAGES)
 
-    # Submit pages to the thread pool one at a time so we never hold
-    # all rendered bitmaps in memory simultaneously.
     page_texts: dict[int, str] = {}
     page_gallery: dict[int, str] = {}
+    vision_queue: list[int] = []   # pages that need a Claude vision call
 
-    with ThreadPoolExecutor(max_workers=2) as pool:  # 2 workers = lower peak RAM
-        futures: dict = {}
-        for i in range(n_pages):
-            page = doc[i]
+    # ── Pass 1: native text extraction (instant, no API call) ──────────────
+    for i in range(n_pages):
+        page = doc[i]
+        native = page.get_text().strip()
 
-            pix_v = render_page(page, dpi=100)   # 120→100: ~30 % smaller payload
-            vision_b64 = pix_to_b64(pix_v)
-            pix_v = None                          # release raw pixmap immediately
+        pix_g = render_page(page, dpi=60)
+        page_gallery[i] = pix_to_b64(pix_g)
+        pix_g = None
 
-            pix_g = render_page(page, dpi=60)    # 72→60: gallery only needs low-res
-            page_gallery[i] = pix_to_b64(pix_g)
-            pix_g = None
+        if len(native) >= NATIVE_TEXT_MIN_CHARS:
+            page_texts[i] = native          # digital PDF — done instantly
+        else:
+            vision_queue.append(i)          # scanned page — needs vision
 
-            future = pool.submit(extract_with_vision, vision_b64)
-            futures[future] = i
-            vision_b64 = None                     # thread holds the only reference now
+    # ── Pass 2: vision only for scanned pages ──────────────────────────────
+    if vision_queue:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures: dict = {}
+            for i in vision_queue:
+                page = doc[i]
+                pix_v = render_page(page, dpi=100)
+                vision_b64 = pix_to_b64(pix_v)
+                pix_v = None
+                future = pool.submit(extract_with_vision, vision_b64)
+                futures[future] = i
+                vision_b64 = None
 
-        for future in as_completed(futures):
-            num = futures[future]
-            try:
-                page_texts[num] = future.result()
-            except Exception:
-                page_texts[num] = ""
+            for future in as_completed(futures):
+                num = futures[future]
+                try:
+                    page_texts[num] = future.result()
+                except Exception:
+                    page_texts[num] = ""
 
     embedded_images = extract_embedded_images_from_pdf(doc)
-    # Cap embedded images to avoid sending huge payloads to Claude
     embedded_images = embedded_images[:MAX_EMBEDDED_IMAGES]
     doc.close()
 
     pages_text = [page_texts[i] for i in range(n_pages) if page_texts.get(i)]
-    page_images = [
-        {"data": page_gallery[i], "label": f"Página {i + 1}"}
-        for i in range(n_pages)
-    ]
+    page_images = [{"data": page_gallery[i], "label": f"Página {i + 1}"} for i in range(n_pages)]
 
     if not pages_text:
         raise HTTPException(status_code=422, detail="No se pudo extraer contenido del PDF.")
 
+    scanned_pages = len(vision_queue)
+    method = "vision" if scanned_pages == n_pages else (
+        "docx+vision" if scanned_pages > 0 else "native"
+    )
     images = embedded_images if embedded_images else page_images
 
     return {
         "text": "\n\n".join(pages_text),
         "pages": len(pages_text),
         "images": images,
-        "method": "vision",
+        "method": method,
     }
 
 
