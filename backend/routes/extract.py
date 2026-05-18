@@ -2,6 +2,7 @@ import io
 import base64
 import hashlib
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import fitz  # pymupdf
 import anthropic
 from fastapi import APIRouter, UploadFile, File, HTTPException
@@ -96,28 +97,47 @@ def extract_embedded_images_from_pdf(doc: fitz.Document) -> list:
 
 def extract_pdf(content: bytes) -> dict:
     doc = fitz.open(stream=content, filetype="pdf")
-    pages_text = []
-    page_images = []   # renders de página completa — usados como fallback
 
+    # Render all pages first (pure CPU, fast)
+    page_data: list[dict] = []
     for page in doc:
-        pix_vision = render_page(page, dpi=150)
-        pix_gallery = render_page(page, dpi=96)
+        pix_vision = render_page(page, dpi=120)   # 150→120: smaller payload, still readable
+        pix_gallery = render_page(page, dpi=72)    # 96→72: gallery display
+        page_data.append({
+            "num": page.number,
+            "vision_b64": pix_to_b64(pix_vision),
+            "gallery_b64": pix_to_b64(pix_gallery),
+        })
 
-        vision_text = extract_with_vision(pix_to_b64(pix_vision))
-        if vision_text:
-            pages_text.append(vision_text)
-
-        page_images.append({"data": pix_to_b64(pix_gallery), "label": f"Página {page.number + 1}"})
-
-    # Extraer imágenes embebidas individuales (radiografías, TC, figuras, etc.)
     embedded_images = extract_embedded_images_from_pdf(doc)
     doc.close()
+
+    # Extract text from all pages in parallel (was sequential before)
+    page_texts: dict[int, str] = {}
+    max_workers = min(4, len(page_data)) if page_data else 1
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        future_to_num = {
+            pool.submit(extract_with_vision, pd["vision_b64"]): pd["num"]
+            for pd in page_data
+        }
+        for future in as_completed(future_to_num):
+            num = future_to_num[future]
+            try:
+                page_texts[num] = future.result()
+            except Exception:
+                page_texts[num] = ""
+
+    pages_text = []
+    page_images = []
+    for pd in page_data:
+        num = pd["num"]
+        if page_texts.get(num):
+            pages_text.append(page_texts[num])
+        page_images.append({"data": pd["gallery_b64"], "label": f"Página {num + 1}"})
 
     if not pages_text:
         raise HTTPException(status_code=422, detail="No se pudo extraer contenido del PDF.")
 
-    # Preferir imágenes embebidas (mayor precisión para colocar inline en síntesis)
-    # Si no hay imágenes embebidas (PDF escaneado), usar renders de página completa
     images = embedded_images if embedded_images else page_images
 
     return {

@@ -78,11 +78,10 @@ Responde ÚNICAMENTE con JSON válido con esta estructura exacta:
 MAX_IMAGES = 20  # Cap para evitar contextos demasiado grandes
 
 
-def synthesize_text(text: str, images: list[str] = []) -> str:
+def _build_synthesis_messages(text: str, images: list[str]) -> tuple[list, str]:
+    """Returns (messages, prompt) ready for the Claude API."""
     images = images[:MAX_IMAGES]
-
     if images:
-        # Multimodal: send images + text together so Claude places [IMG:N] markers
         content = []
         for i, b64 in enumerate(images, 1):
             content.append({
@@ -90,23 +89,34 @@ def synthesize_text(text: str, images: list[str] = []) -> str:
                 "source": {"type": "base64", "media_type": "image/png", "data": b64},
             })
             content.append({"type": "text", "text": f"↑ Imagen {i}"})
-
         prompt = SYNTHESIS_PROMPT_WITH_IMAGES.format(text=text, n_images=len(images))
         content.append({"type": "text", "text": prompt})
-
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=8192,
-            messages=[{"role": "user", "content": content}],
-        )
+        return [{"role": "user", "content": content}], prompt
     else:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=8192,
-            messages=[{"role": "user", "content": SYNTHESIS_PROMPT.format(text=text)}],
-        )
+        prompt = SYNTHESIS_PROMPT.format(text=text)
+        return [{"role": "user", "content": prompt}], prompt
 
+
+def synthesize_text(text: str, images: list[str] = []) -> str:
+    messages, _ = _build_synthesis_messages(text, list(images))
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=8192,
+        messages=messages,
+    )
     return message.content[0].text
+
+
+def synthesize_text_stream(text: str, images: list[str] = []):
+    """Sync generator that yields text chunks as they arrive from Claude."""
+    messages, _ = _build_synthesis_messages(text, list(images))
+    with client.messages.stream(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=8192,
+        messages=messages,
+    ) as stream:
+        for chunk in stream.text_stream:
+            yield chunk
 
 
 def generate_quiz(highlighted_fragments: list[str], n_questions: int) -> dict:

@@ -342,7 +342,10 @@ Es memoria institucional persistente entre sesiones, mantenida por el propio Cla
 
 | # | Módulo | Error cometido | Regla aprendida | Fecha |
 |---|--------|----------------|-----------------|-------|
-| — | —      | Sin errores registrados aún | — | — |
+| 1 | routes/extract.py | Extracción de PDF secuencial: cada página llamaba a Claude en serie, causando timeouts en móvil (10 págs = ~100s) | Usar `ThreadPoolExecutor(max_workers=4)` para procesar páginas en paralelo. También reducir DPI: 150→120 visión, 96→72 galería | 2026-05-17 |
+| 2 | services/claude_service.py + routes/synthesize.py | Síntesis sin streaming: el backend buffereaba 8192 tokens completos antes de responder, causando esperas de 30-60s y timeouts en móvil | Usar `client.messages.stream()` + endpoint `/synthesize/stream` con SSE (Server-Sent Events). El header `X-Accel-Buffering: no` es obligatorio para que nginx de Render no vuelva a bufferear | 2026-05-17 |
+| 3 | frontend/src/services/api.js | Sin timeouts en fetch: el navegador móvil fallaba silenciosamente sin mensaje al usuario | Usar `AbortController` con `setTimeout` en TODAS las llamadas fetch. Timeouts diferenciados: 3min síntesis stream, 5min extracción PDF, 60s quiz | 2026-05-17 |
+| 4 | frontend/src/pages/Home.jsx | Estado de streaming con closures: usar `setState` dentro de callbacks de streaming capturaba valores stale | Usar `useRef` para acumular texto y meta del stream (`acc.current`), y `setState` solo para disparar re-renders | 2026-05-17 |
 
 ---
 

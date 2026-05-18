@@ -49,7 +49,7 @@ export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="relative">
         <textarea
-          className="w-full h-52 p-4 border border-brand-100 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed bg-white shadow-sm text-ink placeholder-ink-muted"
+          className="w-full h-44 p-4 border border-brand-100 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm leading-relaxed bg-white shadow-sm text-ink placeholder-ink-muted"
           placeholder="Pega aquí tu texto académico de radiología (inglés o español)..."
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -67,6 +67,16 @@ export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
         </p>
       )}
 
+      {extracting && (
+        <div className="flex items-center gap-2 text-xs text-secondary-600 bg-secondary-50 rounded-lg px-3 py-2">
+          <svg className="animate-spin h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+          </svg>
+          Extrayendo texto e imágenes del archivo… puede tardar hasta 1 minuto en PDFs grandes.
+        </div>
+      )}
+
       <div className="flex gap-2 flex-wrap items-center">
         <input
           ref={fileInputRef}
@@ -79,24 +89,12 @@ export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={loading || extracting}
-          className="flex items-center gap-2 py-2.5 px-4 border border-secondary-100 bg-white hover:bg-secondary-50 disabled:bg-surface disabled:cursor-not-allowed text-secondary-600 text-sm font-medium rounded-xl transition-colors shadow-sm"
+          className="flex items-center gap-2 py-3 px-4 border border-secondary-100 bg-white hover:bg-secondary-50 active:bg-secondary-100 disabled:bg-surface disabled:cursor-not-allowed text-secondary-600 text-sm font-medium rounded-xl transition-colors shadow-sm min-h-[44px]"
         >
-          {extracting ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-secondary-600" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-              </svg>
-              Cargando archivo...
-            </>
-          ) : (
-            <>
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Cargar archivo
-            </>
-          )}
+          <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          {extracting ? 'Procesando...' : 'Cargar archivo'}
         </button>
         <span className="text-xs text-ink-muted">.pdf .docx .pptx .txt</span>
 
@@ -106,7 +104,7 @@ export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
           <button
             type="button"
             onClick={() => { setText(''); setFileError('') }}
-            className="py-2.5 px-4 border border-brand-100 rounded-xl text-ink-muted hover:bg-brand-50 transition-colors text-sm"
+            className="py-3 px-4 border border-brand-100 rounded-xl text-ink-muted hover:bg-brand-50 active:bg-brand-100 transition-colors text-sm min-h-[44px]"
           >
             Limpiar
           </button>
@@ -115,18 +113,18 @@ export default function TextInput({ onSubmit, loading, onImagesExtracted }) {
         <button
           type="submit"
           disabled={loading || extracting || text.trim().length < 10}
-          className="py-2.5 px-6 bg-brand-600 hover:bg-brand-700 disabled:bg-surface disabled:text-ink-muted disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-sm text-sm"
+          className="py-3 px-6 bg-brand-600 hover:bg-brand-700 active:bg-brand-800 disabled:bg-surface disabled:text-ink-muted disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors shadow-sm text-sm min-h-[44px]"
         >
           {loading ? (
             <span className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
               </svg>
               Sintetizando...
             </span>
           ) : (
-            'Sintetizar texto'
+            'Sintetizar'
           )}
         </button>
       </div>
